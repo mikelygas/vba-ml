@@ -1,0 +1,108 @@
+Sub StocksML()
+
+'Declare dimensions
+Dim i As Long
+Dim j As Integer
+Dim k As Double
+Dim total As Double
+Dim startvalue As Long
+Dim yearlychange As Variant
+Dim percentchange As Double
+Dim ws As Worksheet
+Dim lrow As Long
+
+For Each ws In Worksheets
+'Set values
+j = 0
+total = 0
+yearlychange = 0
+startvalue = 2
+
+
+'Create header row
+ws.Cells(1, 9).Value = "Ticker"
+ws.Cells(1, 10).Value = "Yearly Change"
+ws.Cells(1, 11).Value = "Percent Change"
+ws.Cells(1, 12).Value = "Total Stock Volume"
+
+
+'Find last row and pass number to variable
+lrow = Cells(Rows.Count, "A").End(xlUp).Row
+
+    For i = 2 To lrow
+
+    'If stock name changes then contine below or Else
+        If ws.Cells(i + 1, 1).Value <> ws.Cells(i, 1).Value Then
+
+            'Aggregate variables
+            total = total + ws.Cells(i, 7).Value
+
+            'Handle zero total volume
+            If total = 0 Then
+                'Write to Summary Table
+                ws.Cells(j + 2, 9).Value = Cells(i, 1).Value
+                ws.Cells(j + 2, 10).Value = 0
+                ws.Cells(j + 2, 11).Value = Format(0, "0.00%")
+                ws.Cells(j + 2, 12).Value = 0
+            Else
+
+            'Find first non zero starting value
+            If ws.Cells(startvalue, 3).Value = 0 Then
+                For k = startvalue To i
+                    If ws.Cells(k, 3).Value <> 0 Then
+                        startvalue = k
+                        Exit For
+                    End If
+                Next k
+            End If
+
+            'Calculate change and percentchange
+            yearlychange = (ws.Cells(i, 6) - ws.Cells(startvalue, 3))
+            percentchange = (yearlychange / ws.Cells(startvalue, 3))
+            
+            'Begin new ticker
+            startvalue = i + 1
+
+            'Place results in summary table
+            ws.Cells(j + 2, 9).Value = ws.Cells(i, 1).Value
+            ws.Cells(j + 2, 10).Value = Format(Round(yearlychange, 9), "#,##0.000000000")
+            ws.Cells(j + 2, 11).Value = Format(percentchange, "0.00%")
+            ws.Cells(j + 2, 12).Value = Format(total, "#,##0")
+
+
+        'Fill colors based on pos(green) or neg(red)
+               If yearlychange > 0 Then
+                    ws.Cells(j + 2, 10).Interior.ColorIndex = 4
+               ElseIf yearlychange < 0 Then
+                    ws.Cells(j + 2, 10).Interior.ColorIndex = 3
+              ' Else
+                    'ws.Cells(j + 2, 10).Interior.ColorIndex = 0
+               End If
+            
+        End If
+
+            'Reset variables
+            total = 0
+            yearlychange = 0
+            j = j + 1
+            
+           
+
+    'Else aggregate volumes
+        Else
+            total = total + ws.Cells(i, 7).Value
+
+        End If
+
+    Next i
+    
+    Cells.Select
+    Cells.EntireColumn.AutoFit
+    Range("A1").Select
+
+Next ws
+
+MsgBox ("Macro is complete")
+
+End Sub
+
